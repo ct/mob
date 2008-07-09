@@ -59,11 +59,9 @@ has services => (
 						} },
 						
 	provides  => {
-	    'set'    => 'set_option',
-	    'get'    => 'get_option',            
-	    'empty'  => 'has_options',
-	    'count'  => 'num_options',
-	    'delete' => 'delete_option',
+	    'set'    => 'add_service',
+	    'get'    => 'get_service',            
+	    'remove' => 'delete_service',
 	}
 
 );
