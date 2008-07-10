@@ -10,8 +10,11 @@ use strict;
 use MooseX::POE;
 use MooseX::AttributeHelpers;
 use POSIX qw(uname);
-use constant DEBUG => $ENV{MOB_DEBUG};
-
+use constant {
+	DEBUG => $ENV{MOB_DEBUG},
+	NO_BACKCHANNEL => $ENV{MOB_SKIP_BACKCHANNEL},
+	FORCE_BACKCHANNEL => $ENV{MOB_FORCE_BACKCHANNEL},
+};
 
 use Mob::Service::Core::Config;
 use Mob::Service::Core::Backchannel::XMPP;
@@ -48,6 +51,11 @@ sub _build_identifier {
 	$self->name 
 } 
 
+has no_backchannel => (
+	isa => 'Bool',
+	is  => 'ro',	
+	default => 0,
+);
 
 has description => (
 		isa        => "Str",
@@ -61,11 +69,15 @@ sub _build_description {
 	"Mob: " . $self->role . " [" . $self->hostname . "] " . $self::VERSION; 
 }
 
+has no_backchannel => (
+	isa => 'Str',
+	is  => 'ro',
+	default =>  sub { value }, 
+);
 
 has backchannel_auth => (
 	isa => 'HashRef',
 	is  => 'ro',	
-	required => 1,
 );
 
 has registry_file => (
@@ -101,15 +113,18 @@ sub BUILD {
 							"mob_object"    => $self,
 							})
 					   );
-	
-	$self->add_service("core_backchannel", 
-						Mob::Service::Core::Backchannel::XMPP
-						->new({
-							"resource" => $self->identifier,
-							"auth"    => $self->backchannel_auth,
-							"mob_object"    => $self,
-							})
-						);
+
+	if ((FORCE_BACKCHANNEL) or ((!NO_BACKCHANNEL) and (!$self->no_backchannel))) 
+			{
+			$self->add_service("core_backchannel", 
+								Mob::Service::Core::Backchannel::XMPP
+								->new({
+									"resource" => $self->identifier,
+									"auth"    => $self->backchannel_auth,
+									"mob_object"    => $self,
+									})
+								);
+			}
 }
 
 no MooseX::POE;
