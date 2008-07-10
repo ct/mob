@@ -87,7 +87,8 @@ has services => (
 
 sub _build_services { {} }
 
-after _build_services => sub{
+#after _build_services => sub{
+sub BUILD {
 	my ($self) = shift;
 	
 	$self->add_service("core_conf", 
@@ -107,7 +108,7 @@ after _build_services => sub{
 							"mob_object"    => $self,
 							})
 						);
-};
+}
 
 no MooseX::POE;
 1; # End of Mob

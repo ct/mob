@@ -17,6 +17,7 @@ use POE::Component::Jabber::ProtocolFactory;
 use POE::Filter::XML::Node;
 use POE::Filter::XML::NS qw/ :JABBER :IQ /;
 
+use Data::Dumper;
 
 has xmpp => (
     isa        => 'POE::Component::Jabber',
@@ -32,17 +33,29 @@ has xmpp => (
 	}
 );
 
+has auth => (
+	isa => 'Hashref',
+	is  => 'ro',	
+	required => 1,
+);
+
+has resource => (
+	isa => 'Str',
+	is  => 'ro',	
+);
+
 sub _build_xmpp {
-	my ($self, $args) = @_;
+	my ($self) = @_;
 	
+	print Dumper $self->auth;
 	
 POE::Component::Jabber->new(
-		IP => $args->{'auth'}->{'IP'},
-		PORT => $args->{'auth'}->{'Port'},
-		HOSTNAME => $args->{'auth'}->{'Hostname'},
-		USERNAME => $args->{'auth'}->{'Username'},
-		PASSWORD => $args->{'auth'}->{'Password'},
-		RESOURCE => $args->{'resource'},
+		IP => $self->auth->{'IP'},
+		PORT => $self->auth->{'Port'},
+		HOSTNAME => $self->auth->{'Hostname'},
+		USERNAME => $self->auth->{'Username'},
+		PASSWORD => $self->auth->{'Password'},
+		RESOURCE => $self->resource,
 		Alias => 'PCJ',
 		ConnectionType => XMPP,                                                
 		Debug => '1',
