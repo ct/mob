@@ -10,6 +10,8 @@ use strict;
 use MooseX::POE;
 use MooseX::AttributeHelpers;
 use POSIX qw(uname);
+use constant DEBUG => $ENV{MOB_DEBUG};
+
 
 use Mob::Service::Core::Config;
 use Mob::Service::Core::Backchannel::XMPP;
