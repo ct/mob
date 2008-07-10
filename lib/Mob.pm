@@ -20,7 +20,7 @@ has hostname => (
 		default => sub { (uname)[1] }
 	);
 
-has _pid => (
+has pid => (
 		isa     => "Int",
 		is      => 'ro',
 		default => sub { $$ }, # PID
@@ -32,39 +32,80 @@ has name => (
 		default => sub { "Unruly" }
 	);
 
-has _identifier => (
+has identifier => (
 		isa     => 'Str',
 		is      => 'ro',
-#		default =>  sub { $self->hostname . "-" .
-#						$self->_pid . "-" .
-#						$self->name }, 
+		lazy_build => 1,
 	);
 
-has _description => (
-		isa     => "Str",
-		is      => 'rw',
-#		default => sub { "Mob: " . $self->role . 
-#						 " [" . $self->hostname . "] " .
-#						 $VERSION 
-#						}
+sub _build_identifier { 
+	my ($self) = shift;
+	
+	$self->hostname . "-" .
+	$self->pid . "-" .
+	$self->name 
+} 
+
+
+has description => (
+		isa        => "Str",
+		is         => 'rw',
+		lazy_build => 1,
 	);
+
+sub _build_description { 
+	my ($self) = shift;
+	
+	"Mob: " . $self->role . " [" . $self->hostname . "] " . $self::VERSION; 
+}
+
+
+has backchannel_auth => (
+	isa => 'HashRef',
+	is  => 'ro',	
+	required => 1,
+);
+
+has registry_file => (
+	isa => 'Str',
+	is  => 'ro',	
+	default =>  sub { "" }, 
+);
 
 has services => (
     metaclass  => 'Collection::Hash',
     isa        => 'HashRef',
     is         => 'ro',
-    default    => sub { { 
-							"core_conf" => Mob::Service::Core::Config->new(),
-							"core_backchannel" => Mob::Service::Core::Backchannel::XMPP->new(),
-						} },
-						
+	lazy_build => 1,
 	provides  => {
 	    'set'    => 'add_service',
 	    'get'    => 'get_service',            
-	    'remove' => 'delete_service',
+	    'delete' => 'delete_service',
 	}
 
 );
+
+sub _build_services { 
+	my ($self) = shift;
+	
+	$self->add_service("core_conf", 
+						Mob::Service::Core::Config
+						->new({
+							"name"          => $self->name,
+							"registry_file" => $self->registry_file,
+							"mob_object"    => $self,
+							})
+					   );
+	
+	$self->add_service("core_backchannel", 
+						Mob::Service::Core::Backchannel::XMPP
+						->new({
+							"resource" => $self->identifier,
+							"auth"    => $self->backchannel_auth,
+							"mob_object"    => $self,
+							})
+						);
+}
 
 no MooseX::POE;
 1; # End of Mob

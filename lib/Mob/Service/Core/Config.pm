@@ -8,14 +8,32 @@ our $VERSION = '1.00';
 
 use strict;
 use Moose;
+with 'Mob::Service';
 
-has foo => (
-	isa => 'Str',
+use MooseX::Storage;
+with Storage('format' => 'JSON', 'io' => 'File');
+
+use File::HomeDir;
+
+has registry => (
+	isa => 'HashRef',
 	is  => 'ro',	
-	default =>  sub { warn "Inside Mob::Service::Core::Config, setting foo"; 
-					"value" }, 
+	lazy_build => 1,
 );
 
+sub _build_registry {
+	my $filename = File::HomeDir->my_home . "/.mob/config";
 
+	my $c;
+	
+	if (-e $filename) {
+		$c = $_[0]->load($filename);
+	} else {
+		warn "No config saved locally.";
+		$c = undef;
+	}
+	
+	return $c;
+}
 
 1; # End of Mob::Service::Core::Config

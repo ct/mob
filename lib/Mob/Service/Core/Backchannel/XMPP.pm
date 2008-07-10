@@ -8,7 +8,7 @@ our $VERSION = '1.00';
 
 use strict;
 use MooseX::POE;
-use Data::Dumper;
+with 'Mob::Service';
 
 use POE::Component::Jabber;
 use POE::Component::Jabber::Error;
@@ -33,16 +33,20 @@ has xmpp => (
 );
 
 sub _build_xmpp {
+	my ($self, $args) = @_;
+	
+	
 POE::Component::Jabber->new(
-		IP => 'orb.x4.net',
-		Port => '5222',
-		Hostname => 'x4.net',
-		Username => 'backchannel',
-		Password => 'XXXXX',
+		IP => $args->{'auth'}->{'IP'},
+		PORT => $args->{'auth'}->{'Port'},
+		HOSTNAME => $args->{'auth'}->{'Hostname'},
+		USERNAME => $args->{'auth'}->{'Username'},
+		PASSWORD => $args->{'auth'}->{'Password'},
+		RESOURCE => $args->{'resource'},
 		Alias => 'PCJ',
 		ConnectionType => XMPP,                                                
 		Debug => '1',
-		Stateparent => $_[0]->get_session_id,
+		Stateparent => $self->get_session_id,
 		States => {
 			StatusEvent => 'status_event',
 			InputEvent => 'input_event',
