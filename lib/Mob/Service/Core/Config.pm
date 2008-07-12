@@ -11,29 +11,30 @@ use Moose;
 with 'Mob::Service';
 
 use MooseX::Storage;
-with Storage('format' => 'JSON', 'io' => 'File');
+with Storage( 'format' => 'JSON', 'io' => 'File' );
 
 use File::HomeDir;
 
 has registry => (
-	isa => 'HashRef',
-	is  => 'ro',	
-	lazy_build => 1,
+    isa        => 'HashRef',
+    is         => 'ro',
+    lazy_build => 1,
 );
 
 sub _build_registry {
-	my $filename = File::HomeDir->my_home . "/.mob/config";
+    my $filename = File::HomeDir->my_home . "/.mob/registry";
 
-	my $c;
-	
-	if (-e $filename) {
-		$c = $_[0]->load($filename);
-	} else {
-		warn "No config saved locally.";
-		$c = undef;
-	}
-	
-	return $c;
+    my $c;
+
+    if ( -e $filename ) {
+        $c = $_[0]->load($filename);
+    }
+    else {
+        warn "No config saved locally.";
+        $c = undef;
+    }
+
+    return $c;
 }
 
-1; # End of Mob::Service::Core::Config
+1;    # End of Mob::Service::Core::Config

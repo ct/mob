@@ -10,10 +10,10 @@ use strict;
 use Moose::Role;
 
 has mob_object => (
-	isa => 'Mob',
-	is  => 'ro',	
-	required => 1,
-	weaken => 1,
+    isa      => 'Mob',
+    is       => 'ro',
+    required => 1,
+    weaken   => 1,
 );
 
 no Moose::Role;
