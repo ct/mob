@@ -8,6 +8,8 @@ our $VERSION = '1.00';
 
 use strict;
 use MooseX::POE;
+
+with qw(MooseX::POE::Aliased);
 with 'Mob::Service';
 
 use POE::Component::Jabber;
@@ -22,94 +24,101 @@ use constant DEBUG => $ENV{MOB_DEBUG};
 has xmpp => (
     isa        => 'POE::Component::Jabber',
     is         => 'ro',
-	lazy_build => 1,
-	handles    => {
-		output_handler => 'output_handler',
-		return_to_sender    => 'return_to_sender',
-		shutdown => 'shutdown',
-		connect => 'connect',
-		reconnect => 'reconnect',
-		purge_queue => 'purge_queue',
-	}
+    lazy_build => 1,
+    handles    => {
+        output_handler   => 'output_handler',
+        return_to_sender => 'return_to_sender',
+        shutdown         => 'shutdown',
+        connect          => 'connect',
+        reconnect        => 'reconnect',
+        purge_queue      => 'purge_queue',
+    }
 );
 
 has auth => (
-	isa => 'HashRef',
-	is  => 'ro',	
-	required => 1,
+    isa      => 'HashRef',
+    is       => 'ro',
+    required => 1,
 );
 
 has resource => (
-	isa => 'Str',
-	is  => 'ro',	
+    isa => 'Str',
+    is  => 'ro',
 );
 
 sub _build_xmpp {
-	my ($self) = @_;
-	
-POE::Component::Jabber->new(
-		IP => $self->auth->{'IP'},
-		Port => $self->auth->{'PORT'},
-		Hostname => $self->auth->{'HOSTNAME'},
-		Username => $self->auth->{'USERNAME'},
-		Password => $self->auth->{'PASSWORD'},
-		Resource => $self->resource,
-		Alias => 'PCJ',
-		ConnectionType => XMPP,                                                
-		Debug => +DEBUG,
-		Stateparent => $self->get_session_id,
-		States => {
-			StatusEvent => 'status_event',
-			InputEvent => 'input_event',
-			ErrorEvent => 'error_event',
-		}                                        
-);
+    my ($self) = @_;
+
+    POE::Component::Jabber->new(
+        IP             => $self->auth->{'IP'},
+        Port           => $self->auth->{'PORT'},
+        Hostname       => $self->auth->{'HOSTNAME'},
+        Username       => $self->auth->{'USERNAME'},
+        Password       => $self->auth->{'PASSWORD'},
+        Resource       => $self->resource,
+        Alias          => 'MOBPCJ',
+        ConnectionType => XMPP,
+        Debug          => +DEBUG,
+        Stateparent    => $self->get_session_id,
+        POE_TRACE      => 1,
+        States         => {
+            StatusEvent => 'status_event',
+            InputEvent  => 'input_event',
+            ErrorEvent  => 'error_event',
+        }
+    );
 }
 
 sub START {
     my ( $self, $heap ) = @_[ OBJECT, HEAP ];
-	warn "START";
-	$poe_kernel->post("PCJ", "connect");
+    $self->xmpp;
+    $poe_kernel->post( "MOBPCJ", "connect" );
+}
+
+sub send_node {
+    my ( $self, $node ) = @_;
+
+    $poe_kernel->post( "MOBPCJ", "output_handler", $node );
 }
 
 event set_presence => sub {
-	my ( $self, $type, $status, $heap) = @_[ OBJECT, ARG0, ARG1, HEAP ];
+    my ( $self, $type, $status, $heap ) = @_[ OBJECT, ARG0, ARG1, HEAP ];
 
-	my $n = POE::Filter::XML::Node->new('presence');
+    my $n = POE::Filter::XML::Node->new('presence');
 
-	if ($type ne "present") {
-	        $n->insert_tag('show')->data($type);
-	}
+    if ( $type ne "present" ) {
+        $n->insert_tag('show')->data($type);
+    }
     if ($status) {
-		$n->insert_tag('status')->data($status);
-	}
-	
-    $poe_kernel->post( $self->get_session_id, "output_handler", $n );
+        $n->insert_tag('status')->data($status);
+    }
+    $self->send_node($n);
+
 };
 
 event status_event => sub {
-    my ( $self, $state) = @_[ OBJECT, ARG0 ];
-	warn "XMPP: status_event $state";
-	
-	if($state == PCJ_INIT_FINISHED)
-    {
-		$poe_kernel->post($self->get_session_id, 'purge_queue');
-		$self->yield("set_presence", "present");
-	}
+    my ( $self, $state ) = @_[ OBJECT, ARG0 ];
+
+    #warn "XMPP: status_event $state";
+
+    if ( $state == PCJ_INIT_FINISHED ) {
+
+        #		$poe_kernel->post($self->get_session_id, 'purge_queue');
+        $self->yield( "set_presence", "present" );
+    }
 };
 
 event input_event => sub {
     my ( $self, $heap, $node ) = @_[ OBJECT, HEAP, ARG0 ];
-	print "XMPP: InputEvent\n";
-	print $node->to_str() .  "\n";
+    print "XMPP: InputEvent\n";
+    print $node->to_str() . "\n";
 };
 
 event error_event => sub {
     my ( $self, $heap, $node ) = @_[ OBJECT, HEAP, ARG0 ];
-	print "XMPP: ErrorEvent\n";
-	print $node->to_str() .  "\n";
+    print "XMPP: ErrorEvent\n";
+    print $node->to_str() . "\n";
 };
 
-
 no MooseX::POE;
-1; # End of Mob::Service::Core::Backchannel::XMPP
+1;    # End of Mob::Service::Core::Backchannel::XMPP
