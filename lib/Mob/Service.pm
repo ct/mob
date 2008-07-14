@@ -21,9 +21,11 @@ has mob_object => (
 sub dispatch_request {
     my ( $self, $args ) = @_;
 
+	warn "Mob::Service dispatch_request";
+
     my $packet = Mob::Packet->new(
         sender => self->mob_object->identifier,
-        $args;
+        $args,
     );
 
     $self->mob_object->handle_event($packet);
