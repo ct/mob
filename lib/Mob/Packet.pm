@@ -17,7 +17,7 @@ has packetID => (
 );
 
 has created => (
-    isa     => 'Int',
+    isa     => 'Num',
     is      => 'ro',
     default => sub { Time::HiRes::time; }
 );
@@ -55,5 +55,17 @@ has routing_constraint => (
     default   => sub { 0 },
     clearer   => 'skip_local_routing',
 );
+
+sub dump {
+	my ($self) = @_;
+	
+	my $hashref = {};
+	foreach (keys %{$self}){
+		$hashref->{$_} =  $self->{$_}
+	}
+	
+	return $hashref;
+}
+
 
 1;
