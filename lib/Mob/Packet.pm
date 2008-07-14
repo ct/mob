@@ -35,11 +35,13 @@ has recipient => (
 has senderStore => (
     isa => 'HashRef',
     is  => 'rw',
+	default => sub { {} }
 );
 
 has payload => (
     isa => 'HashRef',
     is  => 'rw',
+	default => sub { {} }
 );
 
 has event_name => (
