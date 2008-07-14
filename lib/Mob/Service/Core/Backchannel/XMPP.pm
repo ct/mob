@@ -21,7 +21,12 @@ use POE::Filter::XML::NS qw/ :JABBER :IQ /;
 use JSON::Any;
 use Data::Dumper;
 
-use constant DEBUG => $ENV{MOB_DEBUG};
+use constant {
+    DEBUG                => $ENV{MOB_DEBUG},
+    MOB_REQ_HANDLED      => 0,
+    MOB_REQ_NOT_HANDLED  => 1,
+    MOB_REQ_HANDLED_LAST => 2,
+};
 
 has xmpp => (
     isa        => 'POE::Component::Jabber',
@@ -120,8 +125,17 @@ event status_event => sub {
 
     if ( $state == PCJ_INIT_FINISHED ) {
 
-        $poe_kernel->post($self->get_session_id, 'purge_queue');
+        $poe_kernel->post( $self->get_session_id, 'purge_queue' );
         $self->yield( "set_presence", "present" );
+
+        $self->mob_object->handle_event(
+            Mob::Packet->new(
+                {
+                    routing_contstraint => 1,
+                    event_name          => 'send_startup_events',
+                }
+            )
+        );
     }
 };
 
@@ -130,11 +144,20 @@ event input_event => sub {
     print "XMPP: InputEvent\n";
 
     if (    ( $node->name() eq 'message' )
-        and ( my $body = $node->get_tag('body')->data ) )
+        and ( my $body = $node->get_tag('body')->data )
+        and ( $node->attr('from') ne $self->mob_object->mobID ) )
     {
-        $body =~ m/^<![CDATA[(.*)]]$>/;
+        print "BEFORE: " . $body . "\n";
+        $body =~ s/^<!\[CDATA\[(.*)]]>$/$1/;
+        print "AFTER: " . $body . "\n";
         $self->mob_object->handle_event(
-            Mob::Packet->new( JSON::Any->jsonToObj($1) ) );
+            Mob::Packet->new(
+                {
+                    routing_constraint => 1,
+                    %{ JSON::Any->jsonToObj($1) },
+                }
+            )
+        );
     }
 
 };
@@ -159,6 +182,14 @@ event error_event => sub {
     print "XMPP: ErrorEvent\n";
     print $node->to_str() . "\n";
 };
+
+sub send_startup_events {
+    my ($self) = @_;
+
+    warn "XMPP: send_startup_events";
+
+    return MOB_REQ_HANDLED;
+}
 
 no MooseX::POE;
 1;    # End of Mob::Service::Core::Backchannel::XMPP
