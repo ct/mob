@@ -8,6 +8,7 @@ our $VERSION = '1.00';
 
 use Moose;
 use Data::UUID;
+use Time::HiRes;
 
 has packetID => (
     isa     => 'Str',
@@ -17,7 +18,8 @@ has packetID => (
 
 has created => (
     isa => 'Int',
-    is  => 'rw',
+    is  => 'ro',
+	default => sub { Time::HiRes::time; }
 );
 
 has sender => (
