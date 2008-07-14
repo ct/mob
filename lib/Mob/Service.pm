@@ -11,6 +11,12 @@ use Moose::Role;
 
 use Mob::Packet;
 
+use constant {
+    MOB_REQ_HANDLED      => 0,
+    MOB_REQ_NOT_HANDLED  => 1,
+    MOB_REQ_HANDLED_LAST => 2,
+};
+
 has mob_object => (
     isa      => 'Mob',
     is       => 'ro',
@@ -21,14 +27,23 @@ has mob_object => (
 sub dispatch_request {
     my ( $self, $args ) = @_;
 
-	warn "Mob::Service dispatch_request";
+    warn "Mob::Service dispatch_request";
 
     my $packet = Mob::Packet->new(
-        sender => self->mob_object->identifier,
-        $args,
+        sender => $self->mob_object->identifier,
+        %{$args},
     );
 
     $self->mob_object->handle_event($packet);
+
+}
+
+sub process_packet {
+    my ( $self, $packet ) = @_;
+
+    if ( my $method = $self->can( $packet->event_name ) ) {
+        return $self->$method($packet);
+    }
 
 }
 
