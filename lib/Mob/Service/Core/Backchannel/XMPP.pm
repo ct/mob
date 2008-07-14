@@ -18,6 +18,8 @@ use POE::Component::Jabber::Status;
 use POE::Component::Jabber::ProtocolFactory;
 use POE::Filter::XML::Node;
 use POE::Filter::XML::NS qw/ :JABBER :IQ /;
+use JSON::Any;
+use Data::Dumper;
 
 use constant DEBUG => $ENV{MOB_DEBUG};
 
@@ -46,6 +48,17 @@ has resource => (
     is  => 'ro',
 );
 
+has jid => (
+    isa        => 'Str',
+    is         => 'ro',
+    lazy_build => 1,
+);
+
+sub _build_jid {
+    my ($self) = @_;
+    $self->auth->{'USERNAME'} . "@" . $self->auth->{'HOSTNAME'};
+}
+
 sub _build_xmpp {
     my ($self) = @_;
 
@@ -60,13 +73,17 @@ sub _build_xmpp {
         ConnectionType => XMPP,
         Debug          => +DEBUG,
         Stateparent    => $self->get_session_id,
-        POE_TRACE      => 1,
         States         => {
             StatusEvent => 'status_event',
             InputEvent  => 'input_event',
             ErrorEvent  => 'error_event',
         }
     );
+}
+
+sub BUILD {
+    my ($self) = @_;
+    $self->mob_object->mobID( $self->jid . "/" . $self->resource );
 }
 
 sub START {
@@ -103,7 +120,7 @@ event status_event => sub {
 
     if ( $state == PCJ_INIT_FINISHED ) {
 
-        #		$poe_kernel->post($self->get_session_id, 'purge_queue');
+        $poe_kernel->post($self->get_session_id, 'purge_queue');
         $self->yield( "set_presence", "present" );
     }
 };
@@ -111,8 +128,31 @@ event status_event => sub {
 event input_event => sub {
     my ( $self, $heap, $node ) = @_[ OBJECT, HEAP, ARG0 ];
     print "XMPP: InputEvent\n";
-    print $node->to_str() . "\n";
+
+    if (    ( $node->name() eq 'message' )
+        and ( my $body = $node->get_tag('body')->data ) )
+    {
+        $body =~ m/^<![CDATA[(.*)]]$>/;
+        $self->mob_object->handle_event(
+            Mob::Packet->new( JSON::Any->jsonToObj($1) ) );
+    }
+
 };
+
+sub dispatch_request {
+    my ( $self, $packet ) = @_;
+
+    warn "Mob...XMPP: dispatch_request";
+
+    my $n = POE::Filter::XML::Node->new('message');
+    $n->attr( 'to',   $self->jid );
+    $n->attr( 'from', $self->jid . "/" . $self->resource );
+    $n->attr( 'type', 'chat' );
+    $n->insert_tag('body')
+      ->data( "<![CDATA[" . JSON::Any->objToJson( $packet->dump ) . "]]>" );
+    $self->send_node($n);
+
+}
 
 event error_event => sub {
     my ( $self, $heap, $node ) = @_[ OBJECT, HEAP, ARG0 ];
