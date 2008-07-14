@@ -92,7 +92,7 @@ has backchannel_auth => (
 has registry_file => (
     isa     => 'Str',
     is      => 'ro',
-    default => sub { "" },
+    default => sub { "registry" },
 );
 
 has services => (
@@ -138,6 +138,16 @@ sub BUILD {
             )
         );
     }
+    else {
+        $self->handle_event(
+            Mob::Packet->new(
+                {
+                    routing_contstraint => 1,
+                    event_name          => 'send_startup_events',
+                }
+            )
+        );
+    }
 }
 
 sub handle_event {
@@ -171,7 +181,6 @@ sub handle_event {
         && ( $self->mobID ne $packet->sender ) )
     {
         warn "Routing to remote";
-        print Dumper $self->services;
         $self->services->{'core_backchannel'}->dispatch_request($packet);
     }
 
