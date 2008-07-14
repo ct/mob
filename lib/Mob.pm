@@ -143,14 +143,14 @@ sub handle_event {
                 $self->services->{$svc}->can( $packet->event_name ) )
             {
                 my $result = $self->services->{$svc}->$method($packet);
-                if ( $result == MOB_REQUEST_HANDLED ) {
+                if ( $result == MOB_REQ_HANDLED ) {
                     $found_local++;
                     next;
                 }
-                elsif ( $result == MOB_REQUEST_NOT_HANDLED ) {
+                elsif ( $result == MOB_REQ_NOT_HANDLED ) {
                     next;
                 }
-                elsif ( $result == MOB_REQUEST_HANDLED_LAST ) {
+                elsif ( $result == MOB_REQ_HANDLED_LAST ) {
                     $found_local++;
                     last;
                 }
