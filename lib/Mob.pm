@@ -11,9 +11,12 @@ use MooseX::POE;
 use MooseX::AttributeHelpers;
 use POSIX qw(uname);
 use constant {
-    DEBUG             => $ENV{MOB_DEBUG},
-    NO_BACKCHANNEL    => $ENV{MOB_SKIP_BACKCHANNEL},
-    FORCE_BACKCHANNEL => $ENV{MOB_FORCE_BACKCHANNEL},
+    DEBUG                => $ENV{MOB_DEBUG},
+    NO_BACKCHANNEL       => $ENV{MOB_SKIP_BACKCHANNEL},
+    FORCE_BACKCHANNEL    => $ENV{MOB_FORCE_BACKCHANNEL},
+    MOB_REQ_HANDLED      => 0,
+    MOB_REQ_NOT_HANDLED  => 1,
+    MOB_REQ_HANDLED_LAST => 2,
 };
 
 use Mob::Packet;
@@ -139,16 +142,29 @@ sub handle_event {
             if ( my $method =
                 $self->services->{$svc}->can( $packet->event_name ) )
             {
-				$found_local++;
-                $self->services->{$svc}->$method($packet);
+                my $result = $self->services->{$svc}->$method($packet);
+                if ( $result == MOB_REQUEST_HANDLED ) {
+                    $found_local++;
+                    next;
+                }
+                elsif ( $result == MOB_REQUEST_NOT_HANDLED ) {
+                    next;
+                }
+                elsif ( $result == MOB_REQUEST_HANDLED_LAST ) {
+                    $found_local++;
+                    last;
+                }
             }
         }
     }
 
-	if ((!$packet->only_route_locally) && (!$found_local)) {
-		# body...
-	}
-	
+    if (   ( !$packet->only_route_locally )
+        && ( !$found_local )
+        && ( !NO_BACKCHANNEL ) )
+    {
+        $self->services->{'core_backchannel'}->dispatch_request($packet);
+    }
+
 }
 
 no MooseX::POE;
