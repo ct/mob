@@ -29,11 +29,15 @@ sub dispatch_request {
 
     warn "Mob::Service dispatch_request";
 
+    my $skip_local = delete $args->{_skip_local};
+
     my $packet = Mob::Packet->new(
         sender => $self->mob_object->identifier,
         %{$args},
     );
-
+    if ($skip_local) {
+        $packet->skip_local_routing;
+    }
     $self->mob_object->handle_event($packet);
 
 }
