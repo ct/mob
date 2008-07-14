@@ -6,10 +6,14 @@
 package Mob::Packet;
 our $VERSION = '1.00';
 
-use strict;
 use Moose;
+use Data::UUID;
 
-use JSON::Any;
+has packetID => (
+    isa     => 'Str',
+    is      => 'ro',
+    default => sub { lc( Data::UUID->new->create_str() ); },
+);
 
 has created => (
     isa => 'Int',
@@ -19,6 +23,11 @@ has created => (
 has sender => (
     isa => 'Str',
     is  => 'rw',
+);
+
+has recipient => (
+    isa => 'Maybe[Str]',
+    is  => 'ro',
 );
 
 has senderStore => (
@@ -34,12 +43,6 @@ has payload => (
 has event_name => (
     isa => 'Str',
     is  => 'ro',
-);
-
-has venue => (
-    isa     => 'str',
-    is      => 'ro',
-    default => sub { value },
 );
 
 has routing_constraint => (
