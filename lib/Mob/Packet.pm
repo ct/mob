@@ -17,9 +17,9 @@ has packetID => (
 );
 
 has created => (
-    isa => 'Int',
-    is  => 'ro',
-	default => sub { Time::HiRes::time; }
+    isa     => 'Int',
+    is      => 'ro',
+    default => sub { Time::HiRes::time; }
 );
 
 has sender => (
