@@ -18,6 +18,7 @@ use constant {
     MOB_REQ_NOT_HANDLED  => 1,
     MOB_REQ_HANDLED_LAST => 2,
 };
+use Data::Dumper;
 
 use Mob::Packet;
 use Mob::Service::Core::Config;
@@ -45,6 +46,12 @@ has identifier => (
     isa        => 'Str',
     is         => 'ro',
     lazy_build => 1,
+);
+
+has mobID => (
+    isa     => 'Str',
+    is      => 'rw',
+    default => sub { "" },
 );
 
 sub _build_identifier {
@@ -137,31 +144,34 @@ sub handle_event {
     my ( $self, $packet ) = @_;
     my $found_local = 0;
 
+    warn "Mob: handle_event";
+
     if ( $packet->route_locally ) {
+        warn "Mob: Checking for local route";
         foreach my $svc ( keys %{ $self->services } ) {
-            if ( my $method =
-                $self->services->{$svc}->can( $packet->event_name ) )
-            {
-                my $result = $self->services->{$svc}->$method($packet);
-                if ( $result == MOB_REQ_HANDLED ) {
-                    $found_local++;
-                    next;
-                }
-                elsif ( $result == MOB_REQ_NOT_HANDLED ) {
-                    next;
-                }
-                elsif ( $result == MOB_REQ_HANDLED_LAST ) {
-                    $found_local++;
-                    last;
-                }
+            my $result = $self->services->{$svc}->process_packet($packet);
+            if ( $result == MOB_REQ_HANDLED ) {
+                $found_local++;
+                next;
+            }
+            elsif ( $result == MOB_REQ_NOT_HANDLED ) {
+                next;
+            }
+            elsif ( $result == MOB_REQ_HANDLED_LAST ) {
+                $found_local++;
+                last;
             }
         }
+
     }
 
     if (   ( !$packet->only_route_locally )
         && ( !$found_local )
-        && ( !NO_BACKCHANNEL ) )
+        && ( !NO_BACKCHANNEL )
+        && ( $self->mobID ne $packet->sender ) )
     {
+        warn "Routing to remote";
+        print Dumper $self->services;
         $self->services->{'core_backchannel'}->dispatch_request($packet);
     }
 
