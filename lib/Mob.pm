@@ -18,10 +18,11 @@ use constant {
     MOB_REQ_NOT_HANDLED  => 1,
     MOB_REQ_HANDLED_LAST => 2,
 };
-use Data::Dumper;
+
+use File::HomeDir;
+use JSON::Any;
 
 use Mob::Packet;
-use Mob::Service::Core::Config;
 use Mob::Service::Core::Backchannel::XMPP;
 
 has hostname => (
@@ -34,6 +35,12 @@ has pid => (
     isa     => "Int",
     is      => 'ro',
     default => sub { $$ },    # PID
+);
+
+has heap => (
+	isa => 'HashRef',
+	is  => 'rw',	
+	default =>  sub { {} }, 
 );
 
 has name => (
@@ -75,7 +82,7 @@ has description => (
 sub _build_description {
     my ($self) = shift;
 
-    "Mob: " . $self->role . " [" . $self->hostname . "] " . $self::VERSION;
+    "Mob: " . $self->name . " [" . $self->hostname . "] " . $VERSION;
 }
 
 has no_backchannel => (
@@ -110,19 +117,42 @@ has services => (
 
 sub _build_services { {}; }
 
+has registry => (
+	isa => 'HashRef',
+	is  => 'rw',
+	lazy_build => 1,
+);
+
+sub _build_registry {
+    my ($self) = @_;
+
+    my $homedir  = File::HomeDir->my_home;
+    my $mobdir   = $homedir . "/.mob/";
+    my $filename = $mobdir . $self->registry_file;
+
+    if ( -e $filename ) {
+	    open( FH, $filename );
+	    local $/;
+	    $self->registry( JSON::Any->jsonToObj(<FH>) );
+	    close FH;
+
+    }
+#    else {
+#        warn "No config saved locally.";
+#        if ( !-d $mobdir ) {
+#            mkdir $mobdir;
+#        }
+#open( FH, ">$filename" );
+#print FH JSON::Any->objToJson( $self->registry );
+#close FH;
+#    }
+
+}
+
 sub BUILD {
     my ($self) = shift;
 
-    $self->add_service(
-        "core_conf",
-        Mob::Service::Core::Config->new(
-            {
-                "name"          => $self->name,
-                "registry_file" => $self->registry_file,
-                "mob_object"    => $self,
-            }
-        )
-    );
+	$0 = $self->description;
 
     if (   (FORCE_BACKCHANNEL)
         or ( ( !NO_BACKCHANNEL ) and ( !$self->no_backchannel ) ) )
