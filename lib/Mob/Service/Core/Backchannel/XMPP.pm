@@ -147,9 +147,7 @@ event input_event => sub {
         and ( my $body = $node->get_tag('body')->data )
         and ( $node->attr('from') ne $self->mob_object->mobID ) )
     {
-        print "BEFORE: " . $body . "\n";
         $body =~ s/^<!\[CDATA\[(.*)]]>$/$1/;
-        print "AFTER: " . $body . "\n";
         $self->mob_object->handle_event(
             Mob::Packet->new(
                 {
