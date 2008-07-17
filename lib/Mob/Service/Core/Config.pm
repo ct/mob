@@ -10,9 +10,6 @@ use strict;
 use Moose;
 with 'Mob::Service';
 
-#use MooseX::Storage;
-#with Storage( 'format' => 'JSON', 'io' => 'File' );
-
 use File::HomeDir;
 use JSON::Any;
 use Data::Dumper;
