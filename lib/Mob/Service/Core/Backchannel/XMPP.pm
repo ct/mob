@@ -121,8 +121,6 @@ event set_presence => sub {
 event status_event => sub {
     my ( $self, $state ) = @_[ OBJECT, ARG0 ];
 
-    #warn "XMPP: status_event $state";
-
     if ( $state == PCJ_INIT_FINISHED ) {
 
         $poe_kernel->post( $self->get_session_id, 'purge_queue' );
@@ -131,8 +129,8 @@ event status_event => sub {
         $self->mob_object->handle_event(
             Mob::Packet->new(
                 {
-                    routing_contstraint => 1,
-                    event_name          => 'send_startup_events',
+                    routing_constraint => 1,
+                    event_name         => 'startup_events',
                 }
             )
         );
@@ -148,22 +146,18 @@ event input_event => sub {
         and ( $node->attr('from') ne $self->mob_object->mobID ) )
     {
         $body =~ s/^<!\[CDATA\[(.*)]]>$/$1/;
-        $self->mob_object->handle_event(
-            Mob::Packet->new(
-                {
-                    routing_constraint => 1,
-                    %{ JSON::Any->jsonToObj($1) },
-                }
-            )
-        );
+
+        my $packet = Mob::Packet->new( %{ JSON::Any->jsonToObj($1) }, );
+
+        $packet->routing_constraint(1);
+
+        $self->mob_object->handle_event($packet);
     }
 
 };
 
 sub dispatch_request {
     my ( $self, $packet ) = @_;
-
-    warn "Mob...XMPP: dispatch_request";
 
     my $n = POE::Filter::XML::Node->new('message');
     $n->attr( 'to',   $self->jid );
@@ -181,10 +175,8 @@ event error_event => sub {
     print $node->to_str() . "\n";
 };
 
-sub send_startup_events {
+sub startup_events {
     my ($self) = @_;
-
-    warn "XMPP: send_startup_events";
 
     return MOB_REQ_HANDLED;
 }
