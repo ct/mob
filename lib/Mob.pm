@@ -21,6 +21,7 @@ use constant {
 
 use File::HomeDir;
 use JSON::Any;
+use Data::Dumper;
 
 use Mob::Packet;
 use Mob::Service::Core::Backchannel::XMPP;
@@ -38,9 +39,9 @@ has pid => (
 );
 
 has heap => (
-	isa => 'HashRef',
-	is  => 'rw',	
-	default =>  sub { {} }, 
+    isa     => 'HashRef',
+    is      => 'rw',
+    default => sub { {} },
 );
 
 has name => (
@@ -118,9 +119,9 @@ has services => (
 sub _build_services { {}; }
 
 has registry => (
-	isa => 'HashRef',
-	is  => 'rw',
-	lazy_build => 1,
+    isa        => 'HashRef',
+    is         => 'rw',
+    lazy_build => 1,
 );
 
 sub _build_registry {
@@ -131,28 +132,19 @@ sub _build_registry {
     my $filename = $mobdir . $self->registry_file;
 
     if ( -e $filename ) {
-	    open( FH, $filename );
-	    local $/;
-	    $self->registry( JSON::Any->jsonToObj(<FH>) );
-	    close FH;
+        open( FH, $filename );
+        local $/;
+        $self->registry( JSON::Any->jsonToObj(<FH>) );
+        close FH;
 
     }
-#    else {
-#        warn "No config saved locally.";
-#        if ( !-d $mobdir ) {
-#            mkdir $mobdir;
-#        }
-#open( FH, ">$filename" );
-#print FH JSON::Any->objToJson( $self->registry );
-#close FH;
-#    }
 
 }
 
 sub BUILD {
     my ($self) = shift;
 
-	$0 = $self->description;
+    $0 = $self->description;
 
     if (   (FORCE_BACKCHANNEL)
         or ( ( !NO_BACKCHANNEL ) and ( !$self->no_backchannel ) ) )
@@ -172,8 +164,8 @@ sub BUILD {
         $self->handle_event(
             Mob::Packet->new(
                 {
-                    routing_contstraint => 1,
-                    event_name          => 'send_startup_events',
+                    routing_constraint => 1,
+                    event_name         => 'startup_events',
                 }
             )
         );
@@ -184,10 +176,7 @@ sub handle_event {
     my ( $self, $packet ) = @_;
     my $found_local = 0;
 
-    warn "Mob: handle_event";
-
     if ( $packet->route_locally ) {
-        warn "Mob: Checking for local route";
         foreach my $svc ( keys %{ $self->services } ) {
             my $result = $self->services->{$svc}->process_packet($packet);
             if ( $result == MOB_REQ_HANDLED ) {
@@ -205,12 +194,13 @@ sub handle_event {
 
     }
 
+    print Dumper $packet;
+
     if (   ( !$packet->only_route_locally )
         && ( !$found_local )
         && ( !NO_BACKCHANNEL )
         && ( $self->mobID ne $packet->sender ) )
     {
-        warn "Routing to remote";
         $self->services->{'core_backchannel'}->dispatch_request($packet);
     }
 
