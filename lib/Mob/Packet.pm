@@ -32,7 +32,7 @@ has recipient => (
     is  => 'ro',
 );
 
-has senderStore => (
+has sender_store => (
     isa => 'HashRef',
     is  => 'rw',
 	default => sub { {} }
