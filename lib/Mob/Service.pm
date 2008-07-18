@@ -27,8 +27,6 @@ has mob_object => (
 sub dispatch_request {
     my ( $self, $args ) = @_;
 
-    warn "Mob::Service dispatch_request";
-
     my $skip_local = delete $args->{_skip_local};
 
     my $packet = Mob::Packet->new(
@@ -48,6 +46,7 @@ sub process_packet {
     if ( my $method = $self->can( $packet->event_name ) ) {
         return $self->$method($packet);
     }
+	return MOB_REQ_NOT_HANDLED;
 
 }
 
