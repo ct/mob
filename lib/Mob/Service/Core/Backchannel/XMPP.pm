@@ -139,7 +139,6 @@ event status_event => sub {
 
 event input_event => sub {
     my ( $self, $heap, $node ) = @_[ OBJECT, HEAP, ARG0 ];
-    print "XMPP: InputEvent\n";
 
     if (    ( $node->name() eq 'message' )
         and ( my $body = $node->get_tag('body')->data )
@@ -147,9 +146,11 @@ event input_event => sub {
     {
         $body =~ s/^<!\[CDATA\[(.*)]]>$/$1/;
 
-        my $packet = Mob::Packet->new( %{ JSON::Any->jsonToObj($1) }, );
+        my $packet = Mob::Packet->new( %{ JSON::Any->jsonToObj($body) }, );
 
         $packet->routing_constraint(1);
+
+		warn Dumper $packet;
 
         $self->mob_object->handle_event($packet);
     }
@@ -159,12 +160,15 @@ event input_event => sub {
 sub dispatch_request {
     my ( $self, $packet ) = @_;
 
+    my $to = ( defined $packet->recipient ) ? $packet->recipient : $self->jid;
+
     my $n = POE::Filter::XML::Node->new('message');
-    $n->attr( 'to',   $self->jid );
+    $n->attr( 'to',   $to );
     $n->attr( 'from', $self->jid . "/" . $self->resource );
     $n->attr( 'type', 'chat' );
     $n->insert_tag('body')
-      ->data( "<![CDATA[" . JSON::Any->objToJson( $packet->dump ) . "]]>" );
+      ->rawdata( "<![CDATA[" . JSON::Any->objToJson( $packet->dump ) . "]]>" );
+
     $self->send_node($n);
 
 }
