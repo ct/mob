@@ -10,6 +10,7 @@ use strict;
 use Moose::Role;
 
 use Mob::Packet;
+use Data::Dumper;
 
 use constant {
     MOB_REQ_HANDLED      => 0,
@@ -28,14 +29,22 @@ sub dispatch_request {
     my ( $self, $args ) = @_;
 
     my $skip_local = delete $args->{_skip_local};
+    my $reply      = delete $args->{reply};
+    my $reply_to      = delete $args->{reply_to};
 
     my $packet = Mob::Packet->new(
-        sender => $self->mob_object->identifier,
+        sender => $self->mob_object->mobID,
         %{$args},
     );
+
+    if ( ($reply) and ( $reply_to ) ) {
+        $packet->recipient( $reply_to );
+    }
+
     if ($skip_local) {
         $packet->skip_local_routing;
     }
+
     $self->mob_object->handle_event($packet);
 
 }
@@ -46,7 +55,7 @@ sub process_packet {
     if ( my $method = $self->can( $packet->event_name ) ) {
         return $self->$method($packet);
     }
-	return MOB_REQ_NOT_HANDLED;
+    return MOB_REQ_NOT_HANDLED;
 
 }
 
