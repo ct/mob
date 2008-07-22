@@ -27,11 +27,11 @@ has command_chars => (
 );
 
 event irc_msg => sub {
-	my ( $self, $who, $recipient, $what ) = @_[ OBJECT, ARG0, ARG1, ARG2 ];
+    my ( $self, $who, $recipient, $what ) = @_[ OBJECT, ARG0, ARG1, ARG2 ];
     my $me = $self->nick;
 
     $self->yield( irc_bot_addressed => $who => [qw(PRIVMSG)] => $what );
-    
+
 };
 
 event irc_public => sub {
@@ -40,18 +40,15 @@ event irc_public => sub {
 
     warn "BotAddressed: $who, $channels, $what, $me";
 
-	$what =~ m/^\s*\Q$me\E[:,;.!?]?\s*(.*)$/i;
-	my $cmd = $1;
-	
-    if ( ! $cmd ) {
+    $what =~ m/^\s*\Q$me\E[:,;.!?]?\s*(.*)$/i;
+    my $cmd = $1;
+
+    if ( !$cmd ) {
         foreach ( @{ $self->command_chars } ) {
-			warn "BotAddressed checking command_chars: $_";
             $what =~ m/^\Q$_\E(.*)$/i;
-			$cmd = $1;
+            $cmd = $1;
         }
     }
-
-    warn "BotAddressed: CMD - $cmd";
 
     return PCI_EAT_NONE if !defined $cmd && $what !~ /$me/i;
 
@@ -67,7 +64,6 @@ event irc_public => sub {
 
 event irc_bot_addressed => sub {
     my ($self) = $_[0];
-    warn "bot addressed, dispatching";
     $self->dispatch_request(
         {
             sender_store => {
@@ -75,6 +71,10 @@ event irc_bot_addressed => sub {
                 channel => $_[ARG1]->[0],
                 server  => $self->server,
             },
+            reply_to    => $self->mob_object->mobID,
+            reply_event => ( $_[ARG1]->[0] eq 'PRIVMSG' )
+            ? "mob_irc_privmsg"
+            : "mob_irc_say_public",
             event_name => 'mob_irc_bot_addressed',
             payload    => { line => $_[ARG2], },
         }
@@ -95,8 +95,8 @@ sub startup_events {
     my ($self) = @_;
     warn "BotAddressed: startup_events";
 
- ##   $self->plugin_add( 'BotAddressed',
-  #      POE::Component::IRC::Plugin::BotAddressed->new() );
+    ##   $self->plugin_add( 'BotAddressed',
+    #      POE::Component::IRC::Plugin::BotAddressed->new() );
 
     return MOB_REQ_HANDLED;
 }
