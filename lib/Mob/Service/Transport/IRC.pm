@@ -156,7 +156,7 @@ sub mob_irc_privmsg {
 
 }
 
-sub send_startup_events {
+sub startup_events {
     my ($self) = @_;
 
     return MOB_REQ_HANDLED;
