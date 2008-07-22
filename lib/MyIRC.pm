@@ -22,12 +22,6 @@ sub mob_irc_bot_addressed {
 
     #print Dumper $packet;
 
-    my $event_name = 'mob_irc_say_public';
-
-    if ( $packet->sender_store->{channel} eq "PRIVMSG" ) {
-        $event_name = 'mob_irc_privmsg';
-    }
-
     my $line = $packet->payload->{line};
     my $response;
 
@@ -39,13 +33,16 @@ sub mob_irc_bot_addressed {
         $response = $packet->sender_store->{nick} . ", bar";
     }
 
-    warn "MyIRC: mob_irc_bot_addressed - " . $event_name;
+    warn "MyIRC: mob_irc_bot_addressed - "
+      . $packet->reply_event;
 
     if ($response) {
         $self->dispatch_request(
             {
+                reply        => 1,
                 sender_store => $packet->sender_store,
-                event_name   => $event_name,
+				reply_to     => $packet->reply_to,
+                event_name   => $packet->reply_event,
                 payload      => { line => $response, },
             }
         );
