@@ -29,24 +29,34 @@ has sender => (
 
 has recipient => (
     isa => 'Maybe[Str]',
-    is  => 'ro',
+    is  => 'rw',
 );
 
 has sender_store => (
-    isa => 'HashRef',
-    is  => 'rw',
-	default => sub { {} }
+    isa     => 'HashRef',
+    is      => 'rw',
+    default => sub { {} }
 );
 
 has payload => (
-    isa => 'HashRef',
-    is  => 'rw',
-	default => sub { {} }
+    isa     => 'HashRef',
+    is      => 'rw',
+    default => sub { {} }
 );
 
 has event_name => (
     isa => 'Str',
     is  => 'ro',
+);
+
+has reply_to => (
+    isa => 'Maybe[Str]',
+    is  => 'rw',
+);
+
+has reply_event => (
+    isa => 'Maybe[Str]',
+    is  => 'rw',
 );
 
 has routing_constraint => (
@@ -59,15 +69,14 @@ has routing_constraint => (
 );
 
 sub dump {
-	my ($self) = @_;
-	
-	my $hashref = {};
-	foreach (keys %{$self}){
-		$hashref->{$_} =  $self->{$_}
-	}
-	
-	return $hashref;
-}
+    my ($self) = @_;
 
+    my $hashref = {};
+    foreach ( keys %{$self} ) {
+        $hashref->{$_} = $self->{$_};
+    }
+
+    return $hashref;
+}
 
 1;
