@@ -56,16 +56,28 @@ has identifier => (
     lazy_build => 1,
 );
 
-has mobID => (
-    isa     => 'Str',
-    is      => 'rw',
-    default => sub { "" },
-);
-
 sub _build_identifier {
     my ($self) = shift;
 
     $self->hostname . "-" . $self->pid . "-" . $self->name;
+}
+
+has mobID => (
+    isa        => 'Str',
+    is         => 'rw',
+    lazy_build => 1,
+);
+
+sub _build_mobID {
+    my ($self) = @_;
+
+    if ( ( !NO_BACKCHANNEL ) and ( !$self->no_backchannel ) ) {
+        $self->services->{core_backchannel}->jid . "/" . $self->identifier;
+    }
+    else {
+        $self->identifier;
+    }
+
 }
 
 has no_backchannel => (
@@ -194,12 +206,12 @@ sub handle_event {
 
     }
 
-    print Dumper $packet;
+    #print "Mob.pm: handle_event\n" . Dumper $packet;
 
     if (   ( !$packet->only_route_locally )
         && ( !$found_local )
         && ( !NO_BACKCHANNEL )
-        && ( $self->mobID ne $packet->sender ) )
+        && ( $self->mobID eq $packet->sender ) )
     {
         $self->services->{'core_backchannel'}->dispatch_request($packet);
     }
