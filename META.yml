@@ -1,0 +1,65 @@
+--- #YAML:1.0
+name:                Mob
+version:             1.00
+abstract:            Mob botlet framework.
+license:             perl
+author:              
+    - Chris Thompson <cthom@cpan.org>
+generated_by:        TextMate
+distribution_type:   module
+requires:     
+    Test::More:                               0
+    Data::UUID:                               0
+    File::HomeDir:                            0
+    JSON::Any:                                0
+	Moose:                                    0
+	Moose::Role:                              0
+	MooseX::AttributeHelpers:                 0
+	MooseX::POE::Role:                        0
+	MooseX::POE:                              0
+	POE::Component::IRC::Common:              0
+	POE::Component::IRC::Plugin:              0
+	POE::Component::IRC::State:               0
+	POE::Component::Jabber::Error:            0
+	POE::Component::Jabber::ProtocolFactory:  0
+	POE::Component::Jabber::Status:           0
+	POE::Component::Jabber:                   0
+	POE::Component::OSCAR:                    0
+	POE::Filter::XML::NS:JABBER:              0
+	POE::Filter::XML::NS:IQ:                  0
+	POE::Filter::XML::Node:                   0
+	POSIX:                                    0
+	Time::HiRes:                              0
+provides:
+	Mob::Packet:
+	  file: lib/Mob/Packet.pm
+	  version: 1.00
+	Mob::Protocol:
+	  file: lib/Mob/Protocol.pm
+	  version: 1.00
+	Mob::Service::Core::Backchannel::XMPP:
+	  file: lib/Mob/Service/Core/Backchannel/XMPP.pm
+	  version: 1.00
+	Mob::Service::Transport::AIM:
+	  file: lib/Mob/Service/Transport/AIM.pm
+	  version: 1.00
+	Mob::Service::Transport::IRC::BotAddressed:
+	  file: lib/Mob/Service/Transport/IRC/BotAddressed.pm
+	  version: 1.00
+	Mob::Service::Transport::IRC:
+	  file: lib/Mob/Service/Transport/IRC.pm
+	  version: 1.00
+	Mob::Service:
+	  file: lib/Mob/Service.pm
+	  version: 1.00
+	Mob:
+	  file: lib/Mob.pm
+	  version: 1.00
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.3.html
+    version: 1.3
+resources:
+    license: http://dev.perl.org/licenses/
+    homepage: http://www.mobframework.org/
+    bugtracker: -
+    repository: http://git.x4.net/Mob.git
