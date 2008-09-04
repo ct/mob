@@ -1,6 +1,5 @@
 .cvsignore
 Changes
-flow
 lib/Mob.pm
 lib/Mob/Packet.pm
 lib/Mob/Protocol.pm
