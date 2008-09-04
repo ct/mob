@@ -33,15 +33,14 @@ sub mob_irc_bot_addressed {
         $response = $packet->sender_store->{nick} . ", bar";
     }
 
-    warn "MyIRC: mob_irc_bot_addressed - "
-      . $packet->reply_event;
+    warn "MyIRC: mob_irc_bot_addressed - " . $packet->reply_event;
 
     if ($response) {
         $self->dispatch_request(
             {
                 reply        => 1,
                 sender_store => $packet->sender_store,
-				reply_to     => $packet->reply_to,
+                reply_to     => $packet->reply_to,
                 event_name   => $packet->reply_event,
                 payload      => { line => $response, },
             }
